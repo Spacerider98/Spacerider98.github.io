@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Director AI - Polymeter Edition</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --highlight: #22d3ee;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #334155;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-color);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        select, button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background-color: #0f172a;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: #000;
+            font-weight: bold;
+            border: none;
+            transition: transform 0.1s, opacity 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .results {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #334155;
+            display: none;
+        }
+
+        .result-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .label-small {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--accent-color);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .value {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .sub-value {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-top: 6px;
+            line-height: 1.4;
+            background: rgba(15, 23, 42, 0.4);
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .chord-box {
+            background: #0f172a;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-family: monospace;
+            border-left: 3px solid var(--accent-color);
+        }
+
+        strong {
+            color: var(--highlight);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Music Director</h1>
+    
+    <div class="input-group">
+        <label for="moodSelect">Desired Mood</label>
+        <select id="moodSelect">
+            <option value="melancholic">Melancholic</option>
+            <option value="dreamy">Dreamy</option>
+            <option value="ethereal">Ethereal</option>
+            <option value="mysterious">Mysterious</option>
+            <option value="dark">Dark</option>
+            <option value="happy">Happy</option>
+            <option value="hypnotic">Hypnotic</option>
+            <option value="tense">Tense</option>
+            <option value="reflective">Reflective</option>
+            <option value="meditative">Meditative</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label for="rhythmType">Rhythm Mode</label>
+        <select id="rhythmType">
+            <option value="standard">Standard (Single Meter)</option>
+            <option value="polymeter">Polymeter (4/4 Overlay)</option>
+        </select>
+    </div>
+
+    <button onclick="generateMusicGuidance()">GENERATE DIRECTION</button>
+
+    <div id="results" class="results">
+        <div class="result-item">
+            <span class="label-small">Key / Tonality</span>
+            <span id="resKey" class="value">--</span>
+        </div>
+        <div class="result-item">
+            <span class="label-small">Tempo</span>
+            <span id="resTempo" class="value">--</span>
+        </div>
+        <div class="result-item">
+            <span class="label-small">Meter / Rhythm</span>
+            <span id="resMeter" class="value">--</span>
+            <div id="polyDetails" class="sub-value"></div>
+        </div>
+        <div class="result-item">
+            <span class="label-small">Suggested Progressions</span>
+            <div id="resChords"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const moodData = {
+        melancholic: {
+            keys: ["C minor", "G minor", "D minor", "F# minor"],
+            tempos: [60, 85],
+            progressions: ["i - VI - III - VII", "i - iv - v - i", "VI - iv - i - V"]
+        },
+        dreamy: {
+            keys: ["E Major", "Ab Major", "Db Major", "B Major"],
+            tempos: [70, 100],
+            progressions: ["Imaj7 - IVmaj7", "ii9 - V13 - Imaj9", "I - bVII - IV"]
+        },
+        ethereal: {
+            keys: ["A# Lydian", "D Lydian", "G Major", "F# Major"],
+            tempos: [50, 80],
+            progressions: ["I - II/I - IV - I", "Imaj7 - iii7 - IVmaj7", "add9 chords: I - V - vi - IV"]
+        },
+        mysterious: {
+            keys: ["C Phrygian", "E Minor", "G# Minor", "D Dorian"],
+            tempos: [65, 95],
+            progressions: ["i - bII - i", "i - vdim - IV", "vi - IV - bII - V"]
+        },
+        dark: {
+            keys: ["Eb Minor", "C Minor", "Phrygian Dominant", "Locrian"],
+            tempos: [55, 90],
+            progressions: ["i - bVI - bV", "i - bII - VI - V", "i - iv - bII - i"]
+        },
+        happy: {
+            keys: ["C Major", "G Major", "D Major", "A Major"],
+            tempos: [110, 140],
+            progressions: ["I - IV - V - I", "I - vi - IV - V", "ii - V - I - IV"]
+        },
+        hypnotic: {
+            keys: ["A Minor", "E Minor", "D Minor", "B Dorian"],
+            tempos: [90, 115],
+            progressions: ["i - VII - VI - VII", "i - v - i - IV", "I - bVII - I"]
+        },
+        tense: {
+            keys: ["F Minor", "Bb Minor", "Diminished Scales", "G# Minor"],
+            tempos: [120, 160],
+            progressions: ["i - bII - viio7", "i - iv - bV - V", "vdim - i - bII"]
+        },
+        reflective: {
+            keys: ["B Minor", "F# Minor", "A Major", "E Major"],
+            tempos: [60, 80],
+            progressions: ["I - vi - IV - iii", "ii - IV - I - V", "I - V - vi - iii"]
+        },
+        meditative: {
+            keys: ["C Major (No 4th)", "G Major", "E Minor", "D Mixolydian"],
+            tempos: [40, 65],
+            progressions: ["I - IV - I", "sus2 - I - sus4", "I - V - IV - I"]
+        }
+    };
+
+    const polymeters = ["2/4", "3/4", "5/4", "6/4", "7/4", "9/4", "3/8", "5/8", "6/8", "7/8", "9/8", "10/8", "11/8", "12/8"];
+
+    const polyEffects = {
+        "2": "Creates a steady, marching feel against the 4/4 pulse.",
+        "3": "A classic hemiola; creates a rolling, circular sensation.",
+        "5": "Forward-leaning and restless; the 'one' constantly shifts.",
+        "6": "Lends a flowing, compound-time feel that stretches the measure.",
+        "7": "Highly complex and jagged; creates a sense of profound suspension.",
+        "9": "Grand and expansive, often used in progressive or math rock.",
+        "10": "A heavy, elongated cycle that feels like a slow tidal wave.",
+        "11": "Extremely disorienting; used to create a 'broken' or alien groove.",
+        "12": "Complex phrasing that eventually resolves into a large cycle."
+    };
+
+    function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+    function lcm(a, b) { return (a * b) / gcd(a, b); }
+
+    function getRandom(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function generateMusicGuidance() {
+        const mood = document.getElementById('moodSelect').value;
+        const rhythmMode = document.getElementById('rhythmType').value;
+        const data = moodData[mood];
+
+        // Random Key
+        document.getElementById('resKey').innerText = getRandom(data.keys);
+
+        // Random Tempo
+        const minT = data.tempos[0];
+        const maxT = data.tempos[1];
+        const tempo = Math.floor(Math.random() * (maxT - minT + 1)) + minT;
+        document.getElementById('resTempo').innerText = tempo + " BPM";
+
+        // Rhythm & Polymeter Logic
+        const meterSpan = document.getElementById('resMeter');
+        const polyDetails = document.getElementById('polyDetails');
+        polyDetails.style.display = 'none';
+
+        if (rhythmMode === "standard") {
+            meterSpan.innerText = "4/4 (Standard)";
+        } else {
+            const poly = getRandom(polymeters);
+            const [pNum, pDenom] = poly.split('/').map(Number);
+            meterSpan.innerText = "4/4 over " + poly;
+            polyDetails.style.display = 'block';
+
+            let syncSteps, barsToSync, pulseType;
+            
+            // Logic to calculate sync points based on LCM
+            if (pDenom === 4) {
+                // If the second meter is in quarters (e.g. 5/4), compare against 4 quarters
+                syncSteps = lcm(4, pNum);
+                barsToSync = syncSteps / 4;
+                pulseType = "quarter notes";
+            } else {
+                // If the second meter is in eighths (e.g. 7/8), compare against 8 eighths (4/4)
+                syncSteps = lcm(8, pNum);
+                barsToSync = syncSteps / 8;
+                pulseType = "eighth notes";
+            }
+
+            const effect = polyEffects[pNum] || "Creates sophisticated rhythmic tension.";
+
+            polyDetails.innerHTML = `
+                <div style="font-style: italic; margin-bottom: 8px;">"${effect}"</div>
+                <div>Syncs every <strong>${barsToSync}</strong> bars of 4/4.</div>
+                <div>Requires <strong>${syncSteps}</strong> ${pulseType} to align.</div>
+            `;
+        }
+
+        // Chords
+        const chordContainer = document.getElementById('resChords');
+        chordContainer.innerHTML = '';
+        const shuffled = [...data.progressions].sort(() => 0.5 - Math.random());
+        shuffled.slice(0, 3).forEach(prog => {
+            const div = document.createElement('div');
+            div.className = 'chord-box';
+            div.innerText = prog;
+            chordContainer.appendChild(div);
+        });
+
+        // Show results
+        document.getElementById('results').style.display = 'block';
+    }
+</script>
+
+</body>
+  </html>
+  
